@@ -333,12 +333,12 @@ function drawBanner(ctx,W,H,row){
   }
 
   // 日付
-  dc(`${row.start_date}~${row.end_date}`,42,DATE_L+DATE_W/2,DATE_T+DATE_H/2,BC);
+  dc(`${row.start_date}~${row.end_date}`,42,DATE_L+DATE_W/2,DATE_T+DATE_H/2-4,BC);  // 4px上
 
-  // 時刻：16pt（20px）
+  // 時刻：16pt（20px）・4px上
   ctx.font=`400 ${sc(20)}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=BC;
-  ctx.fillText(`（${row.start_time}）`,sc(ST_L+ST_W/2),sc(ST_T+ST_H/2));
-  ctx.fillText(`（${row.end_time}）`,sc(ET_L+ET_W/2),sc(ET_T+ET_H/2));
+  ctx.fillText(`（${row.start_time}）`,sc(ST_L+ST_W/2),sc(ST_T+ST_H/2-4));
+  ctx.fillText(`（${row.end_time}）`,sc(ET_L+ET_W/2),sc(ET_T+ET_H/2-4));
 
   // 限定・割引率
   dc('限',28,BDG_TXT_L+BDG_TXT_W/2,BDG_TXT_T+BDG_TXT_H*0.28,WC);
@@ -375,7 +375,7 @@ function drawBanner(ctx,W,H,row){
   to.strokeStyle=RC; to.lineWidth=strkW*2; to.lineJoin='round';
   to.strokeText(numText,pd,pd); to.fillStyle=WC; to.fillText(numText,pd,pd);
   const scaledW=Math.round(tc.width*0.75);
-  const pasteY=sc(811);  // 確定値
+  const pasteY=sc(799);  // 確定値（12px上）
   const pasteX=sc(NUM_L+NUM_W/2)-scaledW/2;
   ctx.drawImage(tc,pasteX,pasteY,scaledW,tc.height);
 
