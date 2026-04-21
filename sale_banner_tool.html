@@ -375,7 +375,7 @@ function drawBanner(ctx,W,H,row){
   to.strokeStyle=RC; to.lineWidth=strkW*2; to.lineJoin='round';
   to.strokeText(numText,pd,pd); to.fillStyle=WC; to.fillText(numText,pd,pd);
   const scaledW=Math.round(tc.width*0.75);
-  const pasteY=sc(799);  // 確定値（12px上）
+  const pasteY=sc(797);  // 確定値
   const pasteX=sc(NUM_L+NUM_W/2)-scaledW/2;
   ctx.drawImage(tc,pasteX,pasteY,scaledW,tc.height);
 
