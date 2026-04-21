@@ -136,6 +136,8 @@ td:first-child{font-family:'Courier New',monospace;font-size:12px}
           <tr><td>end_time</td><td>終了時刻</td><td>23:59</td></tr>
           <tr><td>discount_pct</td><td>割引率（数字のみ）</td><td>20</td></tr>
           <tr><td>price_yen</td><td>割引後価格（数字のみ）</td><td>2160</td></tr>
+          <tr><td>note_text</td><td>注釈（自由入力・空欄可）</td><td>※メガポクーポン使用</td></tr>
+          <tr><td>note_color</td><td>注釈文字色（空欄=黒）</td><td>black または white</td></tr>
         </tbody>
       </table>
       <div style="margin-top:14px">
@@ -276,7 +278,9 @@ function parseCSV(text){
     if(p.length>=8) csvRows.push({
       image_file:p[0],sale_type:p[1],
       start_date:normalizeDate(p[2]),end_date:normalizeDate(p[3]),
-      start_time:p[4],end_time:p[5],discount_pct:p[6],price_yen:p[7]
+      start_time:p[4],end_time:p[5],discount_pct:p[6],price_yen:p[7],
+      note_text: p[8]||'',
+      note_color:(p[9]||'').trim().toLowerCase()==='white'?'#ffffff':'#1a1a1a'
     });
   });
   document.getElementById('csvStatus').innerHTML=
@@ -285,10 +289,10 @@ function parseCSV(text){
 }
 
 function downloadSampleCSV(){
-  const header='image_file,sale_type,start_date,end_date,start_time,end_time,discount_pct,price_yen\n';
-  const rows=['top_productA.jpg,プレメガ,4/28,4/30,0:00,23:59,20,2160',
-              'top_productB.jpg,メガ割,11/20,11/27,20:00,1:59,25,2355',
-              'top_productC.png,,5/1,5/9,0:00,23:59,15,1800'].join('\n');
+  const header='image_file,sale_type,start_date,end_date,start_time,end_time,discount_pct,price_yen,note_text,note_color\n';
+  const rows=['top_productA.jpg,プレメガ,4/28,4/30,0:00,23:59,20,2160,※メガポクーポン使用,black',
+              'top_productB.jpg,メガ割,11/20,11/27,20:00,1:59,25,2355,,',
+              'top_productC.png,,5/1,5/9,0:00,23:59,15,1800,※クーポン併用可,white'].join('\n');
   const blob=new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -310,7 +314,8 @@ function drawBanner(ctx,W,H,row){
   const BDG_TXT_L=293.9,BDG_TXT_T=908.3,BDG_TXT_W=41.1,BDG_TXT_H=69.3;
   const PCT_L=381.1,PCT_T=885.8,PCT_W=100.5,PCT_H=101.9;
   const OFF_L=492.1,OFF_W=64.1;
-  const EN_L=918.7,EN_T=903.6,EN_W=69.2,EN_H=89.1;
+  // 円：21px上（en_cy調整済み）
+  const EN_CX=918.7+69.2/2, EN_CY=903.6+89.1/2-21;
   const NUM_L=576.7,NUM_W=330.4;
   const RC='#e8192c',WC='#ffffff',BC='#1a1a1a';
 
@@ -326,14 +331,21 @@ function drawBanner(ctx,W,H,row){
     if(sc2){ctx.strokeStyle=sc2;ctx.lineWidth=sc(sw);ctx.lineJoin='round';ctx.strokeText(text,sc(cx),sc(cy));}
     ctx.fillStyle=color; ctx.fillText(text,sc(cx),sc(cy));
   }
+
+  // 日付
   dc(`${row.start_date}~${row.end_date}`,42,DATE_L+DATE_W/2,DATE_T+DATE_H/2,BC);
-  ctx.font=`400 ${sc(19)}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=BC;
+
+  // 時刻：16pt（20px）
+  ctx.font=`400 ${sc(20)}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=BC;
   ctx.fillText(`（${row.start_time}）`,sc(ST_L+ST_W/2),sc(ST_T+ST_H/2));
   ctx.fillText(`（${row.end_time}）`,sc(ET_L+ET_W/2),sc(ET_T+ET_H/2));
+
+  // 限定・割引率
   dc('限',28,BDG_TXT_L+BDG_TXT_W/2,BDG_TXT_T+BDG_TXT_H*0.28,WC);
   dc('定',28,BDG_TXT_L+BDG_TXT_W/2,BDG_TXT_T+BDG_TXT_H*0.72,WC);
   dc(String(row.discount_pct),78,PCT_L+PCT_W/2,PCT_T+PCT_H/2,WC);
 
+  // %OFF
   const ox=OFF_L+OFF_W/2-5, ry=886+104/2;
   const hp=sc(46)*1.1,ho=sc(32)*1.1,g=sc(2);
   const bt=sc(ry)-(hp+g+ho)/2;
@@ -342,32 +354,41 @@ function drawBanner(ctx,W,H,row){
   ctx.font=`900 ${sc(32)}px sans-serif`;
   ctx.fillText('OFF',sc(ox),bt+hp+g+ho/2);
 
-  const ecx=EN_L+EN_W/2,ecy=EN_T+EN_H/2;
+  // 円（21px上・白文字赤輪郭）
   ctx.font=`900 ${sc(68)}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.strokeStyle=RC; ctx.lineWidth=sc(10); ctx.lineJoin='round';
-  ctx.strokeText('円',sc(ecx),sc(ecy));
-  ctx.fillStyle=WC; ctx.fillText('円',sc(ecx),sc(ecy));
+  ctx.strokeText('円',sc(EN_CX),sc(EN_CY));
+  ctx.fillStyle=WC; ctx.fillText('円',sc(EN_CX),sc(EN_CY));
 
-  const em=ctx.measureText('円');
-  const eb=sc(ecy)+em.actualBoundingBoxDescent;
-  const nt=Number(row.price_yen).toLocaleString();
-  const nfs=sc(158),sw=sc(14);
+  // 金額（158px・長体75%・白文字赤輪郭・paste_y固定）
+  const numText=Number(row.price_yen).toLocaleString();
+  const nfs=sc(158),strkW=sc(14);
   const tc=document.createElement('canvas'),to=tc.getContext('2d');
   to.font=`900 ${nfs}px sans-serif`;
-  const nm=to.measureText(nt);
-  const nw=nm.actualBoundingBoxLeft+nm.actualBoundingBoxRight;
-  const nh=nm.actualBoundingBoxAscent+nm.actualBoundingBoxDescent;
-  const pd=sw+sc(4);
-  tc.width=Math.ceil(nw+pd*2); tc.height=Math.ceil(nh+pd*2);
+  const nm=to.measureText(numText);
+  const nww=nm.actualBoundingBoxLeft+nm.actualBoundingBoxRight;
+  const nhh=nm.actualBoundingBoxAscent+nm.actualBoundingBoxDescent;
+  const pd=strkW+sc(4);
+  tc.width=Math.ceil(nww+pd*2); tc.height=Math.ceil(nhh+pd*2);
   to.font=`900 ${nfs}px sans-serif`;
   to.textAlign='left'; to.textBaseline='top';
-  to.strokeStyle=RC; to.lineWidth=sw*2; to.lineJoin='round';
-  to.strokeText(nt,pd,pd); to.fillStyle=WC; to.fillText(nt,pd,pd);
-  const sw2=Math.round(tc.width*0.75);
-  const cbt=pd+nh+sw/2;
-  const by=eb-cbt+sc(60)-sc(50);
-  const px=sc(NUM_L+NUM_W/2)-sw2/2;
-  ctx.drawImage(tc,px,by,sw2,tc.height);
+  to.strokeStyle=RC; to.lineWidth=strkW*2; to.lineJoin='round';
+  to.strokeText(numText,pd,pd); to.fillStyle=WC; to.fillText(numText,pd,pd);
+  const scaledW=Math.round(tc.width*0.75);
+  const pasteY=sc(811);  // 確定値
+  const pasteX=sc(NUM_L+NUM_W/2)-scaledW/2;
+  ctx.drawImage(tc,pasteX,pasteY,scaledW,tc.height);
+
+  // 注釈（空欄時はスキップ）
+  if(row.note_text && row.note_text.trim()!==''){
+    const noteFS=sc(19); // 15pt≈19px
+    ctx.font=`500 ${noteFS}px sans-serif`;
+    ctx.textAlign='right';
+    ctx.textBaseline='bottom';
+    ctx.fillStyle=row.note_color||BC;
+    const marginR=sc(12), marginB=sc(10);
+    ctx.fillText(row.note_text, W-marginR, H-marginB);
+  }
 }
 
 async function compositeRow(row){
