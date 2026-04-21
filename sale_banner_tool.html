@@ -12,8 +12,9 @@ h1{font-size:20px;font-weight:600;margin-bottom:4px}
 .subtitle{font-size:13px;color:#666;margin-bottom:1.5rem}
 .card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .card-title{font-size:12px;font-weight:600;color:#888;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.75rem}
-.drop-zone{border:1.5px dashed #ccc;border-radius:8px;padding:1.25rem;text-align:center;cursor:pointer;transition:background .15s}
+.drop-zone{border:1.5px dashed #ccc;border-radius:8px;padding:1.25rem;text-align:center;cursor:pointer;transition:background .15s,border-color .15s}
 .drop-zone:hover{background:#fafafa}
+.drop-zone.drag-over{background:#fff8f8;border-color:#e8192c;border-style:solid}
 .drop-zone strong{font-size:14px;display:block;margin-bottom:4px}
 .drop-zone p{font-size:12px;color:#888}
 input[type=file]{display:none}
@@ -75,8 +76,8 @@ td:first-child{font-family:'Courier New',monospace;font-size:12px}
   <div id="tab-tool">
     <div class="card">
       <div class="card-title">① 通常TOP画像（複数可）</div>
-      <div class="drop-zone" onclick="document.getElementById('imgInput').click()">
-        <strong>クリックして画像を選択</strong>
+      <div class="drop-zone" id="imgZone" onclick="document.getElementById('imgInput').click()">
+        <strong>クリックまたはドラッグ＆ドロップ</strong>
         <p>PNG / JPG — 複数ファイル一括OK</p>
       </div>
       <input type="file" id="imgInput" multiple accept="image/*" onchange="loadImages(this.files)">
@@ -85,8 +86,8 @@ td:first-child{font-family:'Courier New',monospace;font-size:12px}
 
     <div class="card">
       <div class="card-title">② セール情報 CSV</div>
-      <div class="drop-zone" onclick="document.getElementById('csvInput').click()">
-        <strong>クリックしてCSVを選択</strong>
+      <div class="drop-zone" id="csvZone" onclick="document.getElementById('csvInput').click()">
+        <strong>クリックまたはドラッグ＆ドロップ</strong>
         <p>UTF-8 / Shift-JIS どちらも対応</p>
       </div>
       <input type="file" id="csvInput" accept=".csv" onchange="loadCSV(this.files[0])">
@@ -175,6 +176,35 @@ td:first-child{font-family:'Courier New',monospace;font-size:12px}
 <script>
 let images={}, csvRows=[], canvasStore=[];
 const supportsFS='showDirectoryPicker' in window;
+
+// ドラッグ&ドロップ初期化
+function initDrop(zoneId, onFiles){
+  const zone=document.getElementById(zoneId);
+  zone.addEventListener('dragover',e=>{
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  zone.addEventListener('dragleave',e=>{
+    if(!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over');
+  });
+  zone.addEventListener('drop',e=>{
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const files=[...e.dataTransfer.files];
+    if(files.length) onFiles(files);
+  });
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  initDrop('imgZone',files=>{
+    const imgs=files.filter(f=>f.type.startsWith('image/'));
+    if(imgs.length) loadImages(imgs);
+  });
+  initDrop('csvZone',files=>{
+    const csv=files.find(f=>f.name.toLowerCase().endsWith('.csv'));
+    if(csv) loadCSV(csv);
+  });
+});
 
 function switchTab(t){
   ['tool','guide','preview','download'].forEach(id=>{
